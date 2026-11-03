@@ -138,7 +138,6 @@ Not in `.env.example`; add any of them to `.env` to change the default.
 
 | Key | Default | Use |
 |---|---|---|
-| `HCM_LOCALE` | the tenant's own language | force a locale for templates and requests |
 | `HCM_BOUNDARY` | — | instead of `HCM_BOUNDARIES_FROM`: root → this code, with everything below |
 | `HCM_REGISTER_LEVEL` | `auto` (where the DISTRIBUTORs are) | `N`, a level name, or `leaf` |
 | `HCM_AUTO_LEVEL_ROLE` | `DISTRIBUTOR` | the role `auto` follows |
@@ -154,7 +153,7 @@ Not in `.env.example`; add any of them to `.env` to change the default.
 Everything environment-specific is in `.env`; nothing in the code is tied to
 qa or NIGERIA. To move to another environment:
 
-1. Set `HCM_BASE_URL`, `HCM_TENANT_ID` and the credentials.
+1. Set `HCM_BASE_URL`, `HCM_TENANT_ID`, `HCM_LOCALE` and the credentials.
 2. `./list_boundaries.py` — lists the tenant's hierarchies; set
    `HCM_HIERARCHY_TYPE` to one, run it again for its levels and boundary codes.
 3. Pick the boundaries: `HCM_BOUNDARIES_FROM=<a campaign there>` to copy one,
@@ -167,8 +166,14 @@ qa or NIGERIA. To move to another environment:
    types, samples, billing cycle, wage roles and limits.
 5. `./e2e.py` (dry run), then `./e2e.py --yes` or `pytest`.
 
-Locale needs nothing: the tenant's default language is used unless
-`HCM_LOCALE` is set. If template validation fails in a new environment, the
+**Locale.** Set `HCM_LOCALE` for each environment (`en_MZ` on qa, `en_DEMO`
+on demo): it goes into every payload — the `RequestInfo.msgId` suffix, the
+campaign and setup `locale`, and the language of generated templates. Left
+empty, the tenant's StateInfo `defaultLanguage` is used, and `en_IN` if there
+is none; demo declares none, so it would get `en_IN`. The tenant's choices are
+in MDMS `common-masters.StateInfo` → `languages`.
+
+If template validation fails in a new environment, the
 row-level errors are in `output/campaigns/<number>_validation_errors.xlsx`;
 usually the sample needs a column that environment's template has.
 
@@ -256,7 +261,7 @@ The dry run can only plan step 1, since there is no campaign yet. Files
 | `HCM_USER_PHONE_START` | first phone number (default 9100000001) |
 | `--sample` / `HCM_SAMPLE_TEMPLATE` | filled template to learn from; default `data/templates/<TYPE>_sample.xlsx` |
 | `--start` / `--end` | `DD-MM-YYYY`; default tomorrow → +31 days |
-| `--locale` / `HCM_LOCALE` | default the tenant's StateInfo language (`en_MZ` on qa) |
+| `--locale` / `HCM_LOCALE` | `.env` value; if empty, the tenant's StateInfo language, else `en_IN` |
 | `--name`, `--timeout` | campaign name (default `<TYPE>_e2e_<random>`), seconds per async step (900) |
 
 **Users.** One active user per role in `HCM_USER_ROLES` — by default
